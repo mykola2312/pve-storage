@@ -11,6 +11,7 @@ use PVE::RPCEnvironment;
 
 use base qw(PVE::Storage::ZFSPoolPlugin);
 use PVE::Storage::LunCmd::Comstar;
+use PVE::Storage::LunCmd::Ctld;
 use PVE::Storage::LunCmd::Istgt;
 use PVE::Storage::LunCmd::Iet;
 use PVE::Storage::LunCmd::LIO;
@@ -32,7 +33,7 @@ my $lun_cmds = {
 my $zfs_unknown_scsi_provider = sub {
     my ($provider) = @_;
 
-    die "$provider: unknown iscsi provider. Available [comstar, istgt, iet, LIO]";
+    die "$provider: unknown iscsi provider. Available [comstar, ctld, istgt, iet, LIO]";
 };
 
 my $zfs_get_base = sub {
@@ -40,6 +41,8 @@ my $zfs_get_base = sub {
 
     if ($scfg->{iscsiprovider} eq 'comstar') {
         return PVE::Storage::LunCmd::Comstar::get_base($scfg);
+    } elsif ($scfg->{iscsiprovider} eq 'ctld') {
+        return PVE::Storage::LunCmd::Ctld::get_base($scfg);
     } elsif ($scfg->{iscsiprovider} eq 'istgt') {
         return PVE::Storage::LunCmd::Istgt::get_base($scfg);
     } elsif ($scfg->{iscsiprovider} eq 'iet') {
@@ -63,6 +66,8 @@ sub zfs_request {
         if ($scfg->{iscsiprovider} eq 'comstar') {
             $msg =
                 PVE::Storage::LunCmd::Comstar::run_lun_command($scfg, $timeout, $method, @params);
+        } elsif ($scfg->{iscsiprovider} eq 'ctld') {
+            $msg = PVE::Storage::LunCmd::Ctld::run_lun_command($scfg, $timeout, $method, @params);
         } elsif ($scfg->{iscsiprovider} eq 'istgt') {
             $msg = PVE::Storage::LunCmd::Istgt::run_lun_command($scfg, $timeout, $method, @params);
         } elsif ($scfg->{iscsiprovider} eq 'iet') {
@@ -243,6 +248,8 @@ sub on_add_hook {
         my $base_path;
         if ($scfg->{iscsiprovider} eq 'comstar') {
             $base_path = PVE::Storage::LunCmd::Comstar::get_base($scfg);
+        } elsif ($scfg->{iscsiprovider} eq 'ctld') {
+            $base_path = PVE::Storage::LunCmd::Ctld::get_base($scfg);
         } elsif ($scfg->{iscsiprovider} eq 'istgt') {
             $base_path = PVE::Storage::LunCmd::Istgt::get_base($scfg);
         } elsif ($scfg->{iscsiprovider} eq 'iet' || $scfg->{iscsiprovider} eq 'LIO') {
